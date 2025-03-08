@@ -5,7 +5,8 @@ import { StarFilled } from "@ant-design/icons";
 import { StyleNameProduct, WrapperPrice, WrapperReporttext } from "./style";
 import image4 from '../../assets/images/image4.png';
 
-const CardComponent = ({ id }) => {
+const CardComponent = (props) => {
+    const { name, description, image, price, rating, type, author } = props
     const navigate = useNavigate(); // Hook để chuyển trang
 
     const handleClick = () => {
@@ -19,14 +20,14 @@ const CardComponent = ({ id }) => {
             style={{ width: 220, cursor: "pointer" }}
             cover={<img alt="example" src={image4} />}
         >
-            <StyleNameProduct>Sống để kể lại những anh hùng</StyleNameProduct>
+            <StyleNameProduct>{name}</StyleNameProduct>
             <WrapperReporttext>
-                <span>Nguyễn Quang Chánh</span>
+                <span>{author}</span>
                 <span style={{ marginLeft: "8px", display: "flex", alignItems: "center" }}>
-                    <span> | 4.96</span> <StarFilled style={{ fontSize: '12px', color: 'gold', marginLeft: '4px' }} />
+                    <span> | {rating}</span> <StarFilled style={{ fontSize: '12px', color: 'gold', marginLeft: '4px' }} />
                 </span>
             </WrapperReporttext>
-            <WrapperPrice>252,000đ</WrapperPrice>
+            <WrapperPrice>{price}</WrapperPrice>
         </Card>
     );
 };

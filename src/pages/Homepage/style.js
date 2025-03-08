@@ -24,3 +24,10 @@ export const WrapperButtonMore = styled(ButtomComponent)`
     }
 }
 `
+export const WrapperProduct = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+`;

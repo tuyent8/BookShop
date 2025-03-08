@@ -35,10 +35,9 @@ const SignInPage = () => {
             setTimeout(() => {
                 navigate("/"); // Chuyển về trang đăng nhập sau 1s
             }, 1000);
-            localStorage.setItem('access_token', data?.access_token)
+            localStorage.setItem('access_token', JSON.stringify(data?.access_token))
             if (data?.access_token) {
                 const decoded = jwtDecode(data?.access_token);
-                console.log('decoded', decoded)
                 if (decoded?.id) {
                     handleGetDetailUser(decoded?.id, data?.access_token)
                 }

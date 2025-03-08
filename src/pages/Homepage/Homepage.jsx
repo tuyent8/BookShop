@@ -1,6 +1,6 @@
 import React from "react";
 import TypeProduct from "../../components/TypeProduct/TypeProduct";
-import { WrapperButtonMore, WrapperTypeProduct } from "./style";
+import { WrapperButtonMore, WrapperProduct, WrapperTypeProduct } from "./style";
 import Slidercomponent from "../../components/Slidercomponent/Slidercomponent";
 import image1 from "../../assets/images/image1.png";
 import image2 from "../../assets/images/image2.jpg";
@@ -9,11 +9,27 @@ import CardComponent from "../../components/CartComponent/CardComponent";
 import FooterComponent from "../../components/FotterComponent/FotterComponent";
 import NavbarComponent from "../../components/NavbarComponent/NavbarComponent";
 import { Link } from "react-router-dom";
-
-// import NavbarComponent from "../../components/NavbarComponent/NavbarComponent"; // Import Navbar
+import { useQuery } from "@tanstack/react-query";
+import * as ProductService from "../../services/ProductService";
 
 const Homepage = () => {
     const arr = ['Sách thiếu nhi', 'Sách gia đình', 'Sách chính trị-xã hội', 'Sách khoa học', 'Truyện'];
+
+    const { data: products, isLoading, isError } = useQuery({
+        queryKey: ['products'],
+        queryFn: async () => {
+            try {
+                const res = await ProductService.getAllProduct();
+                console.log("Dữ liệu từ API:", res);
+                return res;
+            } catch (error) {
+                console.error("Lỗi khi gọi API:", error);
+                throw error;
+            }
+        },
+        retry: 3,
+        retryDelay: 1000,
+    });
 
     return (
         <>
@@ -38,20 +54,21 @@ const Homepage = () => {
             <div style={{ backgroundColor: "#efefef", padding: "0 120px" }}>
                 <Slidercomponent arrImage={[image1, image2, image3]} />
             </div>
+
             <div style={{
                 display: "flex",
                 alignItems: "center",
                 backgroundColor: "#efefef",
                 padding: "20px 120px",
-                position: "relative" // Để vẽ đường thẳng phía sau
+                position: "relative"
             }}>
                 <span style={{
                     fontSize: "24px",
                     fontWeight: "bold",
                     color: "#02bbff",
-                    paddingRight: "20px", // Tạo khoảng cách giữa chữ và đường kẻ
-                    backgroundColor: "#efefef", // Đảm bảo chữ không bị che
-                    zIndex: "1" // Đặt chữ lên trên đường kẻ
+                    paddingRight: "20px",
+                    backgroundColor: "#efefef",
+                    zIndex: "1"
                 }}>
                     Tất cả sách:
                 </span>
@@ -60,10 +77,9 @@ const Homepage = () => {
                     height: "4px",
                     backgroundColor: "#02bbff",
                     position: "relative",
-                    top: "4px" // Điều chỉnh để ngang với chữ
+                    top: "4px"
                 }}></div>
             </div>
-
 
             <div id="container"
                 style={{
@@ -88,29 +104,28 @@ const Homepage = () => {
 
                 {/* Cột bên phải - Nội dung chính */}
                 <div style={{ flex: 1 }}>
-                    <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        flexWrap: "wrap",
-                        gap: "20px",
-
-                    }}>
-                        <CardComponent />
-                        <CardComponent />
-                        <CardComponent />
-                        <CardComponent />
-                        <CardComponent />
-                        <CardComponent />
-                        <CardComponent />
-                        <CardComponent />
-                        <CardComponent />
-                        <CardComponent />
-                        <CardComponent />
-                        <CardComponent />
-                    </div>
+                    <WrapperProduct>
+                        {isLoading ? (
+                            <p>Đang tải dữ liệu...</p>
+                        ) : isError ? (
+                            <p>Có lỗi xảy ra khi tải dữ liệu!</p>
+                        ) : (
+                            products?.data?.map((product) => (
+                                <CardComponent key={product._id}
+                                    name={product.name}
+                                    author={product.author}
+                                    description={product.description}
+                                    image={product.image}
+                                    price={product.price}
+                                    rating={product.rating}
+                                    type={product.type}
+                                />
+                            ))
+                        )}
+                    </WrapperProduct>
                 </div>
             </div>
+
             <div style={{ display: "flex", justifyContent: "center", padding: "20px", backgroundColor: "#efefef" }}>
                 <WrapperButtonMore
                     textButton="Xem thêm"

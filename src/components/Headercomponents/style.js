@@ -45,4 +45,10 @@ flex-direction: column;
 font-size: 20px; 
 color: white;
 `
-
+export const WrapperContentPopup = styled.p`
+    cursor: pointer;
+    &:hover{
+        background: read;
+        color: #02bbff;
+    }
+`

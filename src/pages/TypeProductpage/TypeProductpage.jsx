@@ -33,7 +33,7 @@ const Productpage = () => {
                 </WrapperTypeProduct>
             </div>
 
-            <div style={{ textAlign: "center", fontSize: "24px", fontWeight: "bold", backgroundColor: '#efefef', padding: "10px", borderBottom: "2px red solid", color: "red" }}>
+            <div style={{ textAlign: "center", fontSize: "24px", fontWeight: "bold", backgroundColor: '#efefef', padding: "10px", borderBottom: "2px red #02bbff", color: "red" }}>
                 {type ? `Danh mục: ${type}` : "Tất cả sản phẩm"}
             </div>
 

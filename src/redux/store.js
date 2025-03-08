@@ -7,4 +7,5 @@ export const store = configureStore({
         counter: counterReducer,
         user: useReducer
     },
+    devTools: true,
 })
