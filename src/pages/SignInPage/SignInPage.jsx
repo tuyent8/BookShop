@@ -31,23 +31,33 @@ const SignInPage = () => {
     const { data, isLoading, isSuccess } = mutation;
     useEffect(() => {
         if (isSuccess) {
-            message.success("Sign in successfully")
-            setTimeout(() => {
-                navigate("/"); // Chuyển về trang đăng nhập sau 1s
-            }, 1000);
-            localStorage.setItem('access_token', JSON.stringify(data?.access_token))
+            message.success("Đăng nhập thành công");
+            localStorage.setItem('access_token', JSON.stringify(data?.access_token));
             if (data?.access_token) {
                 const decoded = jwtDecode(data?.access_token);
                 if (decoded?.id) {
-                    handleGetDetailUser(decoded?.id, data?.access_token)
+                    handleGetDetailUser(decoded?.id, data?.access_token);
                 }
             }
         }
-    }, [isSuccess])
+    }, [isSuccess]);
+
     const handleGetDetailUser = async (id, token) => {
-        const res = await UserService.getDetailUser(id, token);
-        dispatch(updateUser({ ...res?.data, access_token: token }))
-    }
+        try {
+            const res = await UserService.getDetailUser(id, token);
+            dispatch(updateUser({ ...res?.data, access_token: token }));
+
+            // Chuyển hướng dựa vào vai trò người dùng
+            if (res?.data?.isAdmin) {
+                navigate('/system/admin');
+            } else {
+                navigate('/');
+            }
+        } catch (error) {
+            console.error("Error getting user details:", error);
+            message.error("Có lỗi xảy ra khi lấy thông tin người dùng");
+        }
+    };
 
     const handleOnChange = (event) => {
         const { name, value } = event.target;
@@ -104,7 +114,7 @@ const SignInPage = () => {
                 </div>
 
                 {/* Hiển thị lỗi API */}
-                {data?.status !== 'ERR' && data?.message && (
+                {data?.status === 'ERR' && data?.message && (
                     <p style={{ color: "red", fontSize: "16px", float: "left", margin: "4px", fontWeight: "bold" }}>{data.message}</p>
                 )}
                 <form onSubmit={handleSignin}>

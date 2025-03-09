@@ -34,3 +34,70 @@ export const updateUser = async (id, data) => {
     const res = await axios.put(`${process.env.REACT_APP_API_URL}/user/update-user/${id}`, data);
     return res.data
 };
+
+export const getAllUsers = async () => {
+    try {
+        const accessToken = localStorage.getItem('access_token')
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/user/getAll`, {
+            headers: {
+                'Authorization': `Bearer ${JSON.parse(accessToken)}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        console.log('Raw response from getAllUsers:', res);
+        return {
+            status: res.data.status,
+            data: res.data.data || [] // Ensure we always return an array
+        }
+    } catch (error) {
+        console.error('Error in getAllUsers:', error)
+        throw error
+    }
+}
+
+export const deleteUser = async (id) => {
+    try {
+        const accessToken = localStorage.getItem('access_token')
+        if (!accessToken) {
+            throw new Error('No access token found')
+        }
+
+        const apiUrl = process.env.REACT_APP_API_URL
+        if (!apiUrl) {
+            throw new Error('API URL not configured')
+        }
+
+        // Log delete request details
+        console.log('Deleting user with ID:', id)
+        console.log('Making delete request to:', `${apiUrl}/user/delete/${id}`)
+
+        const config = {
+            headers: {
+                'Authorization': `Bearer ${JSON.parse(accessToken)}`,
+                'Content-Type': 'application/json'
+            }
+        }
+
+        console.log('Delete request config:', config)
+
+        const res = await axios.delete(`${apiUrl}/user/delete/${id}`, config)
+
+        // Log response
+        console.log('Delete response:', res.data)
+
+        if (res.data.status === 'ERR') {
+            throw new Error(res.data.message || 'Failed to delete user')
+        }
+
+        return res.data
+    } catch (error) {
+        console.error('Delete error details:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            requestUrl: error.config?.url,
+            requestHeaders: error.config?.headers
+        })
+        throw error.response?.data || error
+    }
+}

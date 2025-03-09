@@ -5,11 +5,11 @@ import Homepage from '../pages/Homepage/Homepage'
 import Notfoundspage from '../pages/NotFoundspage/NotFoundspage'
 import Orderpage from '../pages/Orderpage/orderpage'
 import ProducDetailPage from '../pages/ProductDetailPage/ProductDetailPage'
-import ProductPage from '../pages/ProductPage/ProductPage'
 import ProfilePage from '../pages/ProfilePage/ProfilePage'
 import SignInPage from '../pages/SignInPage/SignInPage'
 import SignUpPage from '../pages/SignUpPage/SignUpPage'
 import TypeProductpage from '../pages/TypeProductpage/TypeProductpage'
+
 export const routes = [
     {
         path: '/',
@@ -19,12 +19,6 @@ export const routes = [
     {
         path: '/order',
         page: Orderpage,
-        isShowHeader: true
-
-    },
-    {
-        path: '/product',
-        page: ProductPage,
         isShowHeader: true
     },
     {
@@ -48,7 +42,7 @@ export const routes = [
         isShowHeader: false
     },
     {
-        path: '/product-detail',
+        path: '/product-detail/:id',
         page: ProducDetailPage,
         isShowHeader: true
     },

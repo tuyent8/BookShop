@@ -19,7 +19,7 @@ const Homepage = () => {
         queryKey: ['products'],
         queryFn: async () => {
             try {
-                const res = await ProductService.getAllProduct();
+                const res = await ProductService.getAllProducts();
                 console.log("Dữ liệu từ API:", res);
                 return res;
             } catch (error) {
@@ -111,7 +111,9 @@ const Homepage = () => {
                             <p>Có lỗi xảy ra khi tải dữ liệu!</p>
                         ) : (
                             products?.data?.map((product) => (
-                                <CardComponent key={product._id}
+                                <CardComponent
+                                    key={product._id}
+                                    id={product._id}
                                     name={product.name}
                                     author={product.author}
                                     description={product.description}

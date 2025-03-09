@@ -1,28 +1,39 @@
-import { Col, Popover } from "antd";
 import React, { useEffect, useState } from "react";
 import {
     WrapperContentPopup,
     WrapperHeader,
+    HeaderContainer,
     WrapperTextHeader,
+    SearchContainer,
+    RightContainer,
     WrapperTextHeaderAccout,
-    WrappertextheaderSmall
+    WrappertextheaderSmall,
+    CartContainer
 } from "./style";
 import { ShoppingCartOutlined, CaretDownOutlined, UserOutlined } from '@ant-design/icons';
 import ButtomInputSearch from "../ButtomInputSearch/ButtomInputSearch";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import * as UserService from "../../services/UserService";
 import { resetUser } from "../../redux/slides/userSlide";
+import { Popover } from "antd";
 import Loading from "../isLoading";
+import { message } from "antd";
 
-const Headercomponent = () => {
+const Headercomponent = ({ isHiddenSearch = false, isHiddenCart = false }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user);
     const [loading, setLoading] = useState(false);
     const [displayName, setDisplayName] = useState("");
     const [useAvatar, setUseAvatar] = useState("");
-    console.log("User data:", user);
+
+    const isAdminPage = location.pathname.startsWith('/admin');
+    const shouldHideSearch = isAdminPage;
+    const shouldHideCart = isAdminPage;
+
+    console.log("User state:", user);
 
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -56,13 +67,21 @@ const Headercomponent = () => {
 
     const handleLogout = async () => {
         setLoading(true);
-        await UserService.logoutUser();
-        dispatch(resetUser());
-        localStorage.removeItem("user");
-        localStorage.removeItem("avatar");
-        setDisplayName("User");
-        setUseAvatar("");
-        setLoading(false);
+        try {
+            await UserService.logoutUser();
+            dispatch(resetUser());
+            localStorage.removeItem("user");
+            localStorage.removeItem("avatar");
+            localStorage.removeItem("access_token");
+            setDisplayName("User");
+            setUseAvatar("");
+            navigate('/');
+        } catch (error) {
+            console.error("Logout error:", error);
+            message.error("Có lỗi xảy ra khi đăng xuất");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const content = (
@@ -73,65 +92,57 @@ const Headercomponent = () => {
     );
 
     return (
-        <div>
-            <WrapperHeader gutter={20}>
-                <Col span={5}>
-                    <a href="/"><WrapperTextHeader>BookStore24/7</WrapperTextHeader></a>
-                </Col>
-                <Col span={13}>
-                    <ButtomInputSearch
-                        size='large'
-                        bordered={false}
-                        placeholder='Nhập từ khóa tìm kiếm'
-                        textbotton='Tìm kiếm'
-                    />
-                </Col>
-                <Col span={6} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '50px' }}>
-                    <Loading isLoading={loading}>
-                        <WrapperTextHeaderAccout>
-                            {useAvatar ? (
-                                <img
-                                    src={useAvatar}
-                                    alt="Avatar"
-                                    style={{
-                                        width: "40px",
-                                        height: "40px",
-                                        borderRadius: "50%",
-                                        objectFit: "cover",
-                                        marginRight: "8px",
-                                        cursor: "pointer"
-                                    }}
-                                />
-                            ) : (
-                                <UserOutlined style={{ fontSize: "30px", marginRight: "8px" }} />
-                            )}
+        <WrapperHeader style={{ justifyContent: shouldHideSearch && shouldHideCart ? 'space-between' : 'unset' }}>
+            <HeaderContainer>
+                <Link to="/" style={{ textDecoration: 'none' }}>
+                    <WrapperTextHeader>BookStore24/7</WrapperTextHeader>
+                </Link>
 
+                {!shouldHideSearch && (
+                    <SearchContainer>
+                        <ButtomInputSearch
+                            size="large"
+                            bordered={false}
+                            placeholder="Nhập từ khóa tìm kiếm"
+                            textbotton="Tìm kiếm"
+                            style={{ width: '100%' }}
+                        />
+                    </SearchContainer>
+                )}
+                <RightContainer>
+                    <WrapperTextHeaderAccout>
+                        <UserOutlined className="user-icon" />
+                        {user?.access_token ? (
+                            <Popover content={content} trigger="click">
+                                <WrappertextheaderSmall>
+                                    <div className="login-text">
+                                        {displayName}
+                                    </div>
+                                </WrappertextheaderSmall>
+                            </Popover>
+                        ) : (
                             <WrappertextheaderSmall>
-                                {user?.access_token || localStorage.getItem("user") ? (
-                                    <Popover content={content} trigger="click">
-                                        <div style={{ cursor: "pointer", marginBottom: "4px" }}>
-                                            {displayName}
-                                        </div>
-                                    </Popover>
-                                ) : (
-                                    <>
-                                        <div onClick={handleNavigateLogin} style={{ cursor: "pointer", marginBottom: "4px" }}>
-                                            Đăng nhập
-                                        </div>
-                                        <div>
-                                            Tài khoản <CaretDownOutlined />
-                                        </div>
-                                    </>
-                                )}
+                                <div className="login-text" onClick={handleNavigateLogin}>
+                                    Đăng nhập/Đăng ký
+                                </div>
+                                <div className="account-text" style={{ fontSize: '16px' }}>
+                                    Tài khoản
+                                </div>
                             </WrappertextheaderSmall>
-                        </WrapperTextHeaderAccout>
-                    </Loading>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <a href="/cart"><ShoppingCartOutlined style={{ fontSize: '30px', color: '#fff' }} /></a>
-                    </div>
-                </Col>
-            </WrapperHeader>
-        </div>
+                        )}
+                    </WrapperTextHeaderAccout>
+                    {!shouldHideCart && (
+                        <CartContainer>
+                            <Link to="/cart" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                                <ShoppingCartOutlined className="cart-icon" />
+                                <span className="cart-text">Giỏ hàng</span>
+                                <span className="cart-count">0</span>
+                            </Link>
+                        </CartContainer>
+                    )}
+                </RightContainer>
+            </HeaderContainer>
+        </WrapperHeader>
     );
 };
 
