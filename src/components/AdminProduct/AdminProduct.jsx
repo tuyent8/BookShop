@@ -23,7 +23,8 @@ const AdminProduct = () => {
         rating: '',
         image: '',
         type: '',
-        author: ''
+        author: '',
+        countInStock: ''
     });
 
     // Add queryClient
@@ -31,28 +32,35 @@ const AdminProduct = () => {
 
     // Fetch products data
     const getAllProducts = async () => {
+        console.log('Calling getAllProducts API...');
         try {
-            const res = await ProductService.getAllProducts()
-            return res
+            const res = await ProductService.getAllProducts({
+                sort: ['desc', 'createdAt'], // Sort by createdAt in descending order
+                filter: null // No filter by default
+            });
+            console.log('getAllProducts response:', res);
+            return res;
         } catch (error) {
-            console.error('Fetch products error:', error.message)
-            throw error
+            console.error('Fetch products error:', error.message);
+            throw error;
         }
-    }
+    };
 
     const queryProduct = useQuery({
         queryKey: ['products'],
         queryFn: getAllProducts,
         refetchOnWindowFocus: false,
         enabled: true,
-        staleTime: 0,
-        cacheTime: 0,
+        staleTime: 300000,
+        cacheTime: 300000,
         retry: 3,
+        refetchOnMount: true,
         onSuccess: (response) => {
             console.log('Query success:', {
                 status: response?.status,
                 hasData: Boolean(response?.data),
-                totalProducts: response?.data?.length
+                totalProducts: response?.data?.length,
+                data: response?.data
             });
         },
         onError: (error) => {
@@ -65,12 +73,15 @@ const AdminProduct = () => {
 
     // Transform data for table
     const tableData = React.useMemo(() => {
+        console.log('Raw products data:', products); // Log raw data
         if (!products?.data || !Array.isArray(products.data)) {
+            console.log('No products data available');
             return [];
         }
 
-        return products.data.map((product) => {
+        const transformedData = products.data.map((product) => {
             if (!product || !product._id) {
+                console.log('Invalid product:', product);
                 return null;
             }
 
@@ -87,6 +98,9 @@ const AdminProduct = () => {
                 discount: product.discount || 0
             };
         }).filter(Boolean);
+
+        console.log('Transformed table data:', transformedData);
+        return transformedData;
     }, [products]);
 
     const columns = [
@@ -111,6 +125,10 @@ const AdminProduct = () => {
         {
             title: 'Author',
             dataIndex: 'author',
+        },
+        {
+            title: 'Số lượng',
+            dataIndex: 'countInStock',
         },
         {
             title: 'Thao tác',
@@ -152,11 +170,49 @@ const AdminProduct = () => {
         onChange: onSelectChange,
     };
 
-    const mutation = useMutationHooks((data) => {
-        return ProductService.createProduct(data);
-    });
+    const mutation = useMutationHooks(
+        (data) => {
+            console.log('Creating product with data:', data);
+            return ProductService.createProduct(data);
+        },
+        {
+            onSuccess: async (response) => {
+                console.log('Create product response:', response);
+                if (response?.status === 'OK' || response?.status === 'ok') {
+                    message.success('Tạo sản phẩm thành công');
+                    handleCancel();
+                    form.resetFields();
+                    setProduct({
+                        name: '',
+                        price: '',
+                        description: '',
+                        rating: '',
+                        image: '',
+                        type: '',
+                        author: '',
+                        countInStock: ''
+                    });
 
-    const { data, isLoading, isSuccess, isError } = mutation;
+                    // Invalidate and refetch
+                    console.log('Invalidating products cache...');
+                    await queryClient.invalidateQueries(['products']);
+                    console.log('Refetching products...');
+                    await queryProduct.refetch();
+                    console.log('Refetch completed');
+                } else {
+                    message.error(response?.message || 'Tạo sản phẩm thất bại');
+                }
+                setLoading(false);
+            },
+            onError: (error) => {
+                console.error('Create product error:', error);
+                message.error(error?.message || 'Tạo sản phẩm thất bại');
+                setLoading(false);
+            }
+        }
+    );
+
+    const { isLoading, isSuccess, isError } = mutation;
 
     const updateMutation = useMutationHooks((data) => {
         const { id, ...updateData } = data;
@@ -165,19 +221,23 @@ const AdminProduct = () => {
 
     const deleteMutation = useMutationHooks(
         (id) => {
+            console.log('Deleting product:', id);
             return ProductService.deleteProduct(id);
         },
         {
             onSuccess: (response) => {
-                if (response?.status === 'OK' || response?.status === 'ok') {
-                    message.success('Xóa sản phẩm thành công');
+                console.log('Delete success:', response);
+                if (response?.status === 'OK') {
+                    message.success(response.message || 'Xóa sản phẩm thành công');
+                    // Refresh danh sách sản phẩm
+                    queryClient.invalidateQueries(['products']);
                     queryProduct.refetch();
                 } else {
                     message.error(response?.message || 'Xóa sản phẩm thất bại');
                 }
             },
             onError: (error) => {
-                console.error('Delete error:', error.message);
+                console.error('Delete error:', error);
                 message.error(error?.message || 'Xóa sản phẩm thất bại');
             }
         }
@@ -198,52 +258,6 @@ const AdminProduct = () => {
         }
     }, [updateMutation.isSuccess, updateMutation.isError]);
 
-    // Handle create product success/error
-    useEffect(() => {
-        if (isSuccess) {
-            if (data?.status === 'OK' || data?.status === 'ok') {
-                message.success('Tạo sản phẩm thành công');
-                handleCancel();
-
-                // Reset form và state
-                form.resetFields();
-                setProduct({
-                    name: '',
-                    price: '',
-                    description: '',
-                    rating: '',
-                    image: '',
-                    type: '',
-                    author: ''
-                });
-
-                // Invalidate và refetch
-                console.log('Invalidating and refetching products...');
-                queryClient.invalidateQueries(['products'])
-                    .then(() => {
-                        return queryProduct.refetch();
-                    })
-                    .then((result) => {
-                        console.log('Refetch result:', {
-                            success: Boolean(result.data),
-                            status: result.data?.status,
-                            totalProducts: result.data?.data?.length
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Refetch failed:', error.message);
-                        message.error('Không thể cập nhật danh sách sản phẩm');
-                    });
-            } else {
-                message.error(data?.message || 'Tạo sản phẩm thất bại');
-            }
-        } else if (isError) {
-            const errorMsg = mutation.error?.message || 'Tạo sản phẩm thất bại';
-            message.error(errorMsg);
-        }
-        setLoading(false);
-    }, [isSuccess, isError]);
-
     const handleCancel = () => {
         setIsModalOpen(false);
         setLoading(false);
@@ -254,7 +268,8 @@ const AdminProduct = () => {
             rating: '',
             image: '',
             type: '',
-            author: ''
+            author: '',
+            countInStock: ''
         });
         form.resetFields();
     };
@@ -268,6 +283,7 @@ const AdminProduct = () => {
             const price = Number(values.price);
             const rating = Number(values.rating);
             const author = values.author?.trim();
+            const countInStock = Number(values.countInStock);
 
             if (!name) throw new Error('Tên sản phẩm không được để trống');
             if (!type) throw new Error('Loại sản phẩm không được để trống');
@@ -276,6 +292,7 @@ const AdminProduct = () => {
             if (isNaN(price) || price <= 0) throw new Error('Giá phải là số dương');
             if (isNaN(rating) || rating < 0 || rating > 5) throw new Error('Rating phải là số từ 0 đến 5');
             if (!author) throw new Error('Tác giả không được để trống');
+            if (isNaN(countInStock) || countInStock < 0) throw new Error('Số lượng phải là số dương');
 
             const finalData = {
                 name,
@@ -284,7 +301,7 @@ const AdminProduct = () => {
                 description,
                 rating,
                 image: stateProduct.image,
-                countInStock: 0,
+                countInStock,
                 discount: 0,
                 author
             };
@@ -331,7 +348,8 @@ const AdminProduct = () => {
             rating: record.rating,
             image: record.image,
             type: record.type,
-            author: record.author
+            author: record.author,
+            countInStock: record.countInStock
         });
         setIsEditModalOpen(true);
         form.setFieldsValue({
@@ -340,7 +358,8 @@ const AdminProduct = () => {
             description: record.description,
             rating: record.rating,
             type: record.type,
-            author: record.author
+            author: record.author,
+            countInStock: record.countInStock
         });
     };
 
@@ -350,13 +369,16 @@ const AdminProduct = () => {
             return;
         }
 
+        console.log('Handling delete for product:', id);
+
         Modal.confirm({
             title: 'Xác nhận xóa sản phẩm',
             content: 'Bạn có chắc chắn muốn xóa sản phẩm này không?',
             okText: 'Đồng ý',
             okType: 'danger',
-            cancelText: 'Không',
+            cancelText: 'Hủy',
             onOk: () => {
+                console.log('Confirmed delete for product:', id);
                 deleteMutation.mutate(id);
             }
         });
@@ -371,12 +393,14 @@ const AdminProduct = () => {
             const price = Number(values.price);
             const rating = Number(values.rating);
             const author = values.author?.trim();
+            const countInStock = Number(values.countInStock);
 
             if (!name) throw new Error('Tên sản phẩm không được để trống');
             if (!type) throw new Error('Loại sản phẩm không được để trống');
             if (!description) throw new Error('Mô tả sản phẩm không được để trống');
             if (isNaN(price) || price <= 0) throw new Error('Giá phải là số dương');
             if (isNaN(rating) || rating < 0 || rating > 5) throw new Error('Rating phải là số từ 0 đến 5');
+            if (isNaN(countInStock) || countInStock < 0) throw new Error('Số lượng phải là số dương');
 
             const finalData = {
                 id: editingProduct.key,
@@ -387,7 +411,7 @@ const AdminProduct = () => {
                 rating,
                 author,
                 image: stateProduct.image || editingProduct.image,
-                countInStock: editingProduct.countInStock || 0,
+                countInStock,
                 discount: editingProduct.discount || 0
             };
 
@@ -506,6 +530,14 @@ const AdminProduct = () => {
                         </Form.Item>
 
                         <Form.Item
+                            label="Số lượng"
+                            name="countInStock"
+                            rules={[{ required: true, message: 'Vui lòng nhập số lượng!' }]}
+                        >
+                            <InputComponent value={stateProduct.countInStock} onChange={handleOnChange} name="countInStock" type="number" />
+                        </Form.Item>
+
+                        <Form.Item
                             label="Image"
                             name="image"
                             rules={[{ required: true, message: 'Vui lòng chọn ảnh sản phẩm!' }]}
@@ -612,6 +644,14 @@ const AdminProduct = () => {
                             rules={[{ required: true, message: 'Please input author!' }]}
                         >
                             <InputComponent value={stateProduct.author} onChange={handleOnChange} name="author" />
+                        </Form.Item>
+
+                        <Form.Item
+                            label="Số lượng"
+                            name="countInStock"
+                            rules={[{ required: true, message: 'Vui lòng nhập số lượng!' }]}
+                        >
+                            <InputComponent value={stateProduct.countInStock} onChange={handleOnChange} name="countInStock" type="number" />
                         </Form.Item>
 
                         <Form.Item

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Form, Input, Button, message } from "antd";
 import { EyeInvisibleOutlined, EyeOutlined, UploadOutlined } from "@ant-design/icons";
@@ -35,30 +34,33 @@ const ProfilePage = () => {
         setAvatar(preview);
     };
 
-
-
     // Xử lý cập nhật thông tin người dùng
     const handleUpdate = async (values) => {
         setLoading(true);
         try {
             const updatedUser = {
-                ...values,
-                avatar,
-                name: user.name  // Giữ nguyên name từ Redux state
+                ...user, // Giữ lại tất cả thông tin user hiện tại
+                ...values, // Cập nhật các giá trị mới
+                avatar: avatar || user.avatar, // Giữ lại avatar cũ nếu không có avatar mới
             };
 
-            console.log("Dữ liệu gửi API:", updatedUser); // Kiểm tra log
+            console.log("Dữ liệu gửi API:", updatedUser);
 
-            await UserService.updateUser(user.id, updatedUser); // Gửi API
-            dispatch(updateUser(updatedUser)); // Cập nhật Redux
-            message.success("Cập nhật thông tin thành công!");
+            const response = await UserService.updateUser(user.id, updatedUser);
+            if (response?.status === 'OK') {
+                // Cập nhật Redux store với dữ liệu từ response
+                dispatch(updateUser({ ...user, ...response.data }));
+                message.success("Cập nhật thông tin thành công!");
+            } else {
+                message.error(response?.message || "Lỗi cập nhật thông tin!");
+            }
         } catch (error) {
+            console.error("Update error:", error);
             message.error("Lỗi cập nhật, vui lòng thử lại!");
         } finally {
             setLoading(false);
         }
     };
-
 
     return (
         <div style={{ width: '1270px', padding: "100px", margin: '0 auto' }}>

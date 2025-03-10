@@ -106,3 +106,91 @@ export const ProductRow = styled.tr`
     }
 `;
 
+export const WrapperStyleHeader = styled.div`
+    margin-bottom: 20px;
+    h2 {
+        font-size: 24px;
+        font-weight: 500;
+        margin: 0;
+    }
+`;
+
+export const WrapperLeft = styled.div`
+    background: #fff;
+    border-radius: 6px;
+    height: 100%;
+`;
+
+export const WrapperListProduct = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+`;
+
+export const WrapperItemProduct = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 6px;
+
+    &:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+`;
+
+export const WrapperPriceProduct = styled.div`
+    color: #ff4d4f;
+    font-size: 16px;
+    font-weight: 500;
+    margin-top: 8px;
+`;
+
+export const WrapperCountProduct = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    button {
+        border-radius: 4px;
+        transition: all 0.3s ease;
+
+        &:hover:not(:disabled) {
+            background-color: #f5f5f5;
+        }
+    }
+`;
+
+export const WrapperRight = styled.div`
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 6px;
+    padding: 16px;
+    position: sticky;
+    top: 20px;
+`;
+
+export const WrapperInfo = styled.div``;
+
+export const WrapperTotal = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+`;
+
+export const CustomButton = styled.button`
+    transition: all 0.3s ease;
+
+    &:hover:not(:disabled) {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0);
+    }
+`;
+

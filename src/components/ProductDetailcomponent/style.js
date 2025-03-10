@@ -5,7 +5,6 @@ export const WrapperContainer = styled.div`
     display: flex;
     flex-direction: column;
     padding: 0px;
-    gap:8px;
 `;
 
 export const WrapperStyleNameProduct = styled.h2`
@@ -67,8 +66,9 @@ export const quantityStyle = {
     minWidth: "60px",
     textAlign: "center",
     backgroundColor: "#f1f1f1",
-    padding: "15px 20px",
-    borderRadius: "8px"
+    padding: "4px 20px",
+    borderRadius: "8px",
+    gap: "4px"
 };
 
 export const buyNowStyle = {

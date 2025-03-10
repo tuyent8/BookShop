@@ -24,39 +24,73 @@ const SignInPage = () => {
     const [isPasswordVisible, setPasswordVisible] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const dispatch = useDispatch();
+
     const mutation = useMutationHooks(
-        data => UserService.loginUser(data),
+        data => UserService.loginUser(data)
     );
 
-    const { data, isLoading, isSuccess } = mutation;
+    const { data, isLoading, isSuccess, isError } = mutation;
+
     useEffect(() => {
-        if (isSuccess) {
-            message.success("Đăng nhập thành công");
-            localStorage.setItem('access_token', JSON.stringify(data?.access_token));
-            if (data?.access_token) {
+        if (data?.status === 'ERR') {
+            // Hiển thị thông báo lỗi từ API
+            message.error(data?.message || "Email hoặc mật khẩu không chính xác");
+            return;
+        }
+
+        if (isSuccess && data?.access_token) {
+            try {
                 const decoded = jwtDecode(data?.access_token);
                 if (decoded?.id) {
+                    localStorage.setItem('access_token', JSON.stringify(data?.access_token));
                     handleGetDetailUser(decoded?.id, data?.access_token);
                 }
+            } catch (error) {
+                console.error("Error decoding token:", error);
+                message.error("Có lỗi xảy ra khi xử lý thông tin đăng nhập");
             }
         }
-    }, [isSuccess]);
+    }, [isSuccess, data]);
 
     const handleGetDetailUser = async (id, token) => {
         try {
             const res = await UserService.getDetailUser(id, token);
-            dispatch(updateUser({ ...res?.data, access_token: token }));
-
-            // Chuyển hướng dựa vào vai trò người dùng
-            if (res?.data?.isAdmin) {
-                navigate('/system/admin');
+            if (res?.data) {
+                dispatch(updateUser({ ...res?.data, access_token: token }));
+                message.success("Đăng nhập thành công"); // Di chuyển thông báo thành công đến đây
+                // Chuyển hướng dựa vào vai trò người dùng
+                if (res?.data?.isAdmin) {
+                    navigate('/system/admin');
+                } else {
+                    navigate('/');
+                }
             } else {
-                navigate('/');
+                throw new Error("Không thể lấy thông tin người dùng");
             }
         } catch (error) {
             console.error("Error getting user details:", error);
             message.error("Có lỗi xảy ra khi lấy thông tin người dùng");
         }
+    };
+
+    const validateForm = () => {
+        if (!formData.email?.trim()) {
+            message.warning("Vui lòng nhập email");
+            return false;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            message.warning("Email không hợp lệ");
+            return false;
+        }
+        if (!formData.password?.trim()) {
+            message.warning("Vui lòng nhập mật khẩu");
+            return false;
+        }
+        if (formData.password.length < 6) {
+            message.warning("Mật khẩu phải có ít nhất 6 ký tự");
+            return false;
+        }
+        return true;
     };
 
     const handleOnChange = (event) => {
@@ -65,14 +99,17 @@ const SignInPage = () => {
             ...prev,
             [name]: value || "",
         }));
+        setErrorMessage("");
     };
 
     const handleSignin = (e) => {
         e.preventDefault();
-        mutation.mutate({
-            email: formData.email,
-            password: formData.password,
-        });
+        if (validateForm()) {
+            mutation.mutate({
+                email: formData.email,
+                password: formData.password,
+            });
+        }
     };
 
     return (
@@ -113,19 +150,10 @@ const SignInPage = () => {
                     </span>
                 </div>
 
-                {/* Hiển thị lỗi API */}
-                {data?.status === 'ERR' && data?.message && (
-                    <p style={{ color: "red", fontSize: "16px", float: "left", margin: "4px", fontWeight: "bold" }}>{data.message}</p>
-                )}
                 <form onSubmit={handleSignin}>
                     <Button
                         type="submit"
-                        disabled={
-                            isLoading ||
-                            !formData.email?.trim() ||
-                            !formData.password?.trim() ||
-                            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-                        }
+                        disabled={isLoading}
                     >
                         {isLoading ? <Spin size="small" /> : "Đăng nhập"}
                     </Button>

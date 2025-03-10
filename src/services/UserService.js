@@ -8,8 +8,16 @@ export const loginUser = async (data) => {
 }
 
 export const signupUser = async (data) => {
-    const res = await axios.post(`${process.env.REACT_APP_API_URL}/user/sign-up`, data)
-    return res.data
+    try {
+        console.log('API URL:', process.env.REACT_APP_API_URL);
+        console.log('Signup data being sent:', data);
+        const res = await axios.post(`${process.env.REACT_APP_API_URL}/user/sign-up`, data);
+        console.log('Signup response:', res.data);
+        return res.data;
+    } catch (error) {
+        console.error('Signup error:', error.response?.data || error);
+        throw error;
+    }
 }
 
 export const getDetailUser = async (id, access_token) => {

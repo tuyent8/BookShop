@@ -1,9 +1,37 @@
 import axios from "axios"
 
-export const getAllProducts = async () => {
-    const res = await axios.get(`${process.env.REACT_APP_API_URL}/product/getAll-Product`)
-    return res.data
-}
+export const getAllProducts = async (params) => {
+    const { sort, filter } = params || {};
+    let url = `${process.env.REACT_APP_API_URL}/product/getAll-Product`;
+
+    // Add query parameters if they exist
+    const queryParams = new URLSearchParams();
+
+    // Handle sort parameter
+    if (sort) {
+        // Assuming sort is an array [order, field]
+        if (Array.isArray(sort) && sort.length >= 2) {
+            queryParams.append('sort', JSON.stringify(sort));
+        }
+    }
+
+    // Handle filter parameter
+    if (filter) {
+        // Assuming filter is an array [field, value]
+        if (Array.isArray(filter) && filter.length >= 2) {
+            queryParams.append('filter', JSON.stringify(filter));
+        }
+    }
+
+    // Append query string to URL if there are parameters
+    const queryString = queryParams.toString();
+    if (queryString) {
+        url += `?${queryString}`;
+    }
+
+    const res = await axios.get(url);
+    return res.data;
+};
 
 export const getDetailsProduct = async (id) => {
     try {
@@ -101,35 +129,35 @@ export const updateProduct = async (id, data) => {
 
 export const deleteProduct = async (id) => {
     try {
-        const accessToken = JSON.parse(localStorage.getItem('access_token'));
+        const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
             throw new Error('No access token found');
         }
 
-        console.log('Making delete request for product ID:', id);
-        console.log('API URL:', `${process.env.REACT_APP_API_URL}/product/deleteProduct/${id}`);
+        console.log('Deleting product with ID:', id);
 
-        const response = await axios.delete(`${process.env.REACT_APP_API_URL}/product/deleteProduct/${id}`, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
+        const response = await axios.delete(
+            `${process.env.REACT_APP_API_URL}/product/deleteProduct/${id}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${JSON.parse(accessToken)}`,
+                    'Content-Type': 'application/json'
+                }
             }
-        });
+        );
 
-        console.log('Delete API response:', response);
+        console.log('Delete response:', response.data);
 
         if (response.data?.status === 'ERR') {
-            throw new Error(response.data.message || 'Failed to delete product');
+            throw new Error(response.data.message || 'Không tìm thấy sản phẩm');
         }
 
         return response.data;
     } catch (error) {
-        console.error('Delete request failed:', {
-            error: error,
-            message: error.message,
-            response: error.response?.data,
-            status: error.response?.status
-        });
-        throw error.response?.data || error;
+        console.error('Delete error:', error);
+        throw {
+            status: 'ERR',
+            message: error.response?.data?.message || error.message || 'Xóa sản phẩm thất bại'
+        };
     }
 };
